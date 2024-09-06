@@ -9,7 +9,7 @@ const { Text } = Typography;
 const TreeViewComponent = () => {
   const [data, setData] = useState({ epics: [], stories: [], tasks: [] });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // State for handling errors
+  const [error, setError] = useState(null); 
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,7 +44,9 @@ const TreeViewComponent = () => {
       .map((story) => ({
         key: story._id,
         label: (
-          <span><FolderOutlined /> {story.storyName || "Unnamed Story"}</span>
+          <span style={{ color: '#4a148c' }}> {/* Purple Text for Story */}
+            <FolderOutlined /> {story.storyName || "Unnamed Story"}
+          </span>
         ),
         children: (
           <>
@@ -56,8 +58,18 @@ const TreeViewComponent = () => {
               <p>No tasks assigned to this story.</p>
             ) : (
               getTasksForStory(story._id).map((task, index) => (
-                <div key={task._id} className="bg-green-50 p-3 rounded mb-2">
-                  <h4 className="font-semibold">Task {index + 1}: {task.taskName}</h4>
+                <div
+                  key={task._id}
+                  style={{
+                    background: '#e3f2fd ', // Light Green background for tasks BBDEFB  E0F7FA 
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <h4 className="font-semibold" style={{ color: '#333' }}> {/* Dark Green Text for Tasks */}
+                    Task {index + 1}: {task.taskName}
+                  </h4>
                   <p>{task.description}</p>
                 </div>
               ))
@@ -82,7 +94,7 @@ const TreeViewComponent = () => {
             </Button>
           </Space>
         ),
-        style: { background: '#d2f6ff' },
+        style: { background: '#E0F7FA', borderRadius: '8px', padding: '10px' }, // Lavender background for stories
       }));
   }, [data.stories, data.tasks]);
 
@@ -96,7 +108,7 @@ const TreeViewComponent = () => {
       return {
         key: epic._id,
         label: (
-          <span>
+          <span style={{ color: '#1565c0' }}> {/* Blue Text for Epics */}
             <FolderOpenOutlined /> {epic.epicName || "Unnamed Epic"}
             {hasMissingStoriesOrTasks && (
               <ExclamationCircleOutlined
@@ -127,7 +139,7 @@ const TreeViewComponent = () => {
             </Button>
           </Space>
         ),
-        style: { marginBottom: 24, background: '#8de8ff' },
+        style: { marginBottom: 24, background: '#BBDEFB', borderRadius: '8px', padding: '10px' }, // Blue background for epics
       };
     });
   }, [data.epics, data.stories, data.tasks, navigate, storyItems]);

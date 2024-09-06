@@ -116,21 +116,24 @@ const StoryComponent = () => {
   });
 
   const handleNext = async () => {
-    const errors = await formik.validateForm();
-    const stepFields = [
+    const currentStepFields = [
       ['storyName', 'epicId', 'description'],
       ['userGroup', 'assignedUser', 'priority'],
       ['startDate', 'endDate', 'duration', 'estimationPoints'],
     ];
-    const currentStepFields = stepFields[currentStep];
-
-    const hasErrors = currentStepFields.some((field) => errors[field]);
-
-    if (hasErrors) {
+  
+    const errors = await formik.validateForm();
+    const currentFieldsWithErrors = currentStepFields[currentStep].filter(field => errors[field]);
+  
+    if (currentFieldsWithErrors.length > 0) {
       showNotification('warning', 'Warning', 'Please fill all required fields in the current step.');
+      formik.setTouched(currentFieldsWithErrors.reduce((acc, field) => {
+        acc[field] = true;
+        return acc;
+      }, {}));
       return;
     }
-
+  
     setCurrentStep(currentStep + 1);
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, Button, Select, Card, notification, Row, Col } from 'antd';
+import { Form, Input, Button, Select, Card, notification, Row, Col,Spin } from 'antd';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,45 +18,48 @@ const EpicComponent = () => {
   const [loading, setLoading] = useState(true);
   const [notificationApi, contextHolder] = notification.useNotification();
   const navigate = useNavigate();
+  
 
   const isEditMode = !!id;
 
   useEffect(() => {
     const fetchOwners = async () => {
+      const response = await axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/owners');
+      return response.data;
+    };
+  
+    const fetchEpic = async () => {
+      const response = await axios.get(`https://agilebackendtest-ig6zd90q.b4a.run//api/epics/${id}`);
+      return response.data;
+    };
+  
+    const fetchData = async () => {
       try {
-        const response = await axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/owners');
-        setOwners(response.data);
+        setLoading(true);
+  
+        // Run both API calls concurrently
+        if (isEditMode) {
+          const [ownersData, epicData] = await Promise.all([fetchOwners(), fetchEpic()]);
+  
+          setOwners(ownersData);
+          form.setFieldsValue(epicData); // Pre-fill form with epic data
+        } else {
+          const ownersData = await fetchOwners();
+          setOwners(ownersData);
+        }
+  
       } catch (error) {
-        console.error('Error fetching owners:', error);
+        console.error('Error fetching data:', error);
         notification.error({
           message: 'Error',
-          description: 'Failed to fetch owners. Please try again later.',
+          description: 'Failed to fetch data. Please try again later.',
         });
       } finally {
         setLoading(false);
       }
     };
-
-    const fetchEpic = async () => {
-      try {
-        const response = await axios.get(`https://agilebackendtest-ig6zd90q.b4a.run//api/epics/${id}`);
-        form.setFieldsValue(response.data); // Pre-fill form with existing epic data
-      } catch (error) {
-        console.error('Error fetching epic:', error);
-        notification.error({
-          message: 'Error',
-          description: 'Failed to fetch epic details. Please try again later.',
-        });
-      }
-    };
-
-    fetchOwners();
-
-    if (isEditMode) {
-      fetchEpic();
-    } else {
-      setLoading(false);
-    }
+  
+    fetchData();
   }, [id, form, isEditMode]);
 
   const onFinish = async (values) => {
@@ -103,6 +106,7 @@ const EpicComponent = () => {
         hoverable
         style={{ transition: 'transform 0.1s ease-in-out', border: '1px solid #ddd' }}
       >
+        <Spin spinning={loading}> {/* Add Spin here */}        
         <div style={{ padding: '20px' }}>
           <Form
             form={form}
@@ -176,6 +180,7 @@ const EpicComponent = () => {
             </Form.Item>
           </Form>
         </div>
+        </Spin>
       </Card>
     </div>
   );

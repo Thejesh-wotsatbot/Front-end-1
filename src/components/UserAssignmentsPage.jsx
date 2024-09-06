@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Collapse, Spin, } from 'antd';
+import { Collapse, Spin } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
-
 
 const UserAssignmentsPage = () => {
   const [userName, setUserName] = useState('');
@@ -10,7 +9,8 @@ const UserAssignmentsPage = () => {
   const [stories, setStories] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // For initial data fetch
+  const [checkingAssignments, setCheckingAssignments] = useState(false); // For checking user assignments
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,10 +20,11 @@ const UserAssignmentsPage = () => {
         const tasksResponse = await axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/tasks');
         setStories(storiesResponse.data);
         setTasks(tasksResponse.data);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
         setMessage('Error fetching data. Please try again.');
+        setAssignedUser(null); // Reset user state on error
+      } finally {
         setLoading(false);
       }
     };
@@ -37,7 +38,7 @@ const UserAssignmentsPage = () => {
     }
 
     try {
-      setLoading(true);
+      setCheckingAssignments(true);
       const usersResponse = await axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/users');
       const matchedUser = usersResponse.data.find(user => user.name.toLowerCase() === userName.toLowerCase());
 
@@ -56,13 +57,15 @@ const UserAssignmentsPage = () => {
         setAssignedUser(null);
         setMessage('No user found with this name.');
       }
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching user data:', error);
       setMessage('Error fetching data. Please try again.');
-      setLoading(false);
+    } finally {
+      setCheckingAssignments(false); // Stop the checking loading state
     }
   };
+
+  const getTasksForStory = (storyId) => tasks.filter(task => task.storyId === storyId);
 
   const storyItems = stories
     .filter(story => story.assignedUser === assignedUser?.name)
@@ -73,17 +76,15 @@ const UserAssignmentsPage = () => {
         <div>
           <p>{story.description}</p>
           <h4 className="font-bold text-lg mt-4">Tasks:</h4>
-          {tasks.filter(task => task.storyId === story._id).length === 0 ? (
+          {getTasksForStory(story._id).length === 0 ? (
             <p>No tasks assigned to this story.</p>
           ) : (
-            tasks
-              .filter(task => task.storyId === story._id)
-              .map((task, index) => (
-                <div key={task._id} className="bg-green-50 p-3 rounded mb-2">
-                  <h4 className="font-semibold">Task {index + 1}: {task.taskName}</h4>
-                  <p>{task.description}</p>
-                </div>
-              ))
+            getTasksForStory(story._id).map((task, index) => (
+              <div key={task._id} className="bg-green-50 p-3 rounded mb-2">
+                <h4 className="font-semibold">Task {index + 1}: {task.taskName}</h4>
+                <p>{task.description}</p>
+              </div>
+            ))
           )}
         </div>
       ),
@@ -100,25 +101,23 @@ const UserAssignmentsPage = () => {
           type="text"
           id="userName"
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          placeholder="Name"
+          placeholder="Enter name to check assignments"
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
         />
         <button
           onClick={handleCheckAssignments}
           className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          disabled={loading}
+          disabled={checkingAssignments}
         >
-          {loading ? 'Checking...' : 'Check Assignments'}
+          {checkingAssignments ? 'Checking...' : 'Check Assignments'}
         </button>
       </div>
 
       {loading ? (
-        <Spin tip="Loading assignments...">
-          <div style={{ minHeight: '200px' }}>
-            {/* Empty div to provide some height for the spinner */}
-          </div>
-        </Spin>
+        <div className="flex justify-center items-center" style={{ minHeight: '200px' }}>
+          <Spin tip="Loading assignments..." />
+        </div>
       ) : (
         <>
           {message && (
@@ -136,8 +135,8 @@ const UserAssignmentsPage = () => {
                 bordered={false}
                 items={storyItems}
               />
-              {stories.filter(story => story.assignedUser === assignedUser.name).length === 0 && (
-                <p>No stories assigned.</p>
+              {storyItems.length === 0 && (
+                <p className="text-red-500 text-center mt-4">No stories or tasks assigned to {assignedUser.name}.</p>
               )}
             </div>
           )}

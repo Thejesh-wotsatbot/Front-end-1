@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Collapse, Card, Typography, Space, Button, notification } from 'antd';
+import { useState, useEffect, useMemo } from 'react';
+import { Collapse, Typography, Space, Button, notification, Spin, Alert } from 'antd';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FileTextOutlined, FolderOutlined, FolderOpenOutlined, EditOutlined, PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { FolderOutlined, FolderOpenOutlined, EditOutlined, PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -36,95 +36,57 @@ const TreeViewComponent = () => {
     fetchData();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const getTasksForStory = (storyId) => data.tasks.filter((task) => task.storyId === storyId);
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  // Render tasks
-  const renderTasks = (storyId) => {
-    const tasks = data.tasks.filter((task) => task.storyId === storyId);
-    if (tasks.length === 0) {
-      return <Text>No tasks available for this story.</Text>;
-    }
-
-    return tasks.map((task) => (
-      <div key={task._id} style={{ marginLeft: 24 }}>
-        <Card
-          title={<span><FileTextOutlined /> {task.taskName || "Unnamed Task"}</span>}
-          bordered={true}
-          style={{ marginBottom: 10, background: '#e6fffb', borderColor: '#87e8de' }}
-          hoverable
-          extra={
+  const storyItems = useMemo(() => (epicId) => {
+    return data.stories
+      .filter((story) => story.epicId === epicId)
+      .map((story) => ({
+        key: story._id,
+        label: (
+          <span><FolderOutlined /> {story.storyName || "Unnamed Story"}</span>
+        ),
+        children: (
+          <>
+            <Text>{story.description || "No description available."}</Text>
+            <div style={{ marginTop: 10, marginBottom: 10 }}>
+              <Text type="secondary">User Group: {story.userGroup || "Not assigned"}</Text>
+            </div>
+            {getTasksForStory(story._id).length === 0 ? (
+              <p>No tasks assigned to this story.</p>
+            ) : (
+              getTasksForStory(story._id).map((task, index) => (
+                <div key={task._id} className="bg-green-50 p-3 rounded mb-2">
+                  <h4 className="font-semibold">Task {index + 1}: {task.taskName}</h4>
+                  <p>{task.description}</p>
+                </div>
+              ))
+            )}
+          </>
+        ),
+        extra: (
+          <Space>
             <Button
               type="link"
               icon={<EditOutlined />}
-              onClick={() => navigate(`/task/edit/${task._id}`)}
+              onClick={() => navigate(`/story/edit/${story._id}`)}
             >
               Edit
             </Button>
-          }
-        >
-          <Text>{task.description || "No description available."}</Text>
-          <div style={{ marginTop: 10 }}>
-            <Text type="secondary">Assigned User: {task.assignedUser || "Not assigned"}</Text>
-          </div>
-        </Card>
-      </div>
-    ));
-  };
+            <Button
+              type="link"
+              icon={<PlusOutlined />}
+              onClick={() => navigate(`/task/${story._id}`, { state: { storyId: story._id } })}
+            >
+              Add Task
+            </Button>
+          </Space>
+        ),
+        style: { background: '#d2f6ff' },
+      }));
+  }, [data.stories, data.tasks]);
 
-  // Render stories
-  const renderStories = (epicId) => {
-    const stories = data.stories.filter((story) => story.epicId === epicId);
-    if (stories.length === 0) {
-      return <Text>No stories available for this epic.</Text>;
-    }
-    return stories.map((story) => ({
-      key: story._id,
-      label: (
-        <span><FolderOutlined /> {story.storyName || "Unnamed Story"}</span>
-      ),
-      children: (
-        <>
-          <Text>{story.description || "No description available."}</Text>
-          <div style={{ marginTop: 10, marginBottom:10 }}>
-            <Text type="secondary">User Group: {story.userGroup || "Not assigned"}</Text>
-          </div>
-          {renderTasks(story._id)}
-        </>
-      ),
-      extra: (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => navigate(`/story/edit/${story._id}`)}
-          >
-            Edit
-          </Button>
-          <Button
-            type="link"
-            icon={<PlusOutlined />}
-            onClick={() => navigate(`/task/${story._id}`, { state: { storyId: story._id } })}
-          >
-            Add Task
-          </Button>
-        </Space>
-      ),
-      style: {background: '#d2f6ff'}
-    }));
-  };
-
-  // Render epics with error icon if stories or tasks are missing
-  const renderEpics = () => {
-    if (data.epics.length === 0) {
-      return <Text>No epics available.</Text>;
-    }
-
+  const epicItems = useMemo(() => {
     return data.epics.map((epic) => {
       const epicStories = data.stories.filter((story) => story.epicId === epic._id);
       const hasMissingStoriesOrTasks = epicStories.some(
@@ -144,11 +106,11 @@ const TreeViewComponent = () => {
             )}
           </span>
         ),
-        children: <Collapse accordion items={renderStories(epic._id)} />,
+        children: <Collapse accordion items={storyItems(epic._id)} />,
         extra: (
           <Space>
             <Button
-              style={{color:'black'}}
+              style={{ color: 'black' }}
               type="link"
               icon={<EditOutlined />}
               onClick={() => navigate(`/epic/edit/${epic._id}`)}
@@ -156,7 +118,7 @@ const TreeViewComponent = () => {
               Edit
             </Button>
             <Button
-              style={{color:'black'}}
+              style={{ color: 'black' }}
               type="link"
               icon={<PlusOutlined />}
               onClick={() => navigate(`/add-story`, { state: { epicId: epic._id } })}
@@ -165,16 +127,47 @@ const TreeViewComponent = () => {
             </Button>
           </Space>
         ),
-        style: { marginBottom: 24, background: '#8de8ff' }
+        style: { marginBottom: 24, background: '#8de8ff' },
       };
     });
-  };
+  }, [data.epics, data.stories, data.tasks, navigate, storyItems]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ minHeight: '200px' }}>
+        <Spin tip="Loading data..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ marginTop: '20px' }}>
+        <Alert message="Error" description={error} type="error" showIcon />
+      </div>
+    );
+  }
+
+  if (data.epics.length === 0) {
+    return (
+      <div>
+        <Text>No epics available.</Text>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => navigate('/add-epic')}
+        >
+          Add Epic
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
       <h2 className="text-3xl font-bold mb-6 text-center">Agile Management</h2>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Collapse accordion items={renderEpics()} />
+        <Collapse accordion items={epicItems} />
       </Space>
     </div>
   );

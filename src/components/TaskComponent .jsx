@@ -31,7 +31,7 @@ const TaskComponent = () => {
         setAssignedUsers(usersResponse.data);
   
         if (isEditMode) {
-          const taskResponse = await axios.get(`https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}`);
+          const taskResponse = await axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}');
           const taskData = taskResponse.data;
   
           // Check if storyId is an object, then extract the string ID
@@ -97,7 +97,7 @@ const TaskComponent = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         if (isEditMode) {
-          await axios.put(`https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}`, values);
+          await axios.put('https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}', values);
           notification.success({
             message: 'Task Updated',
             description: 'Your task has been updated successfully.',

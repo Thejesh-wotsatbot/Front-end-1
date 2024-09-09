@@ -12,6 +12,11 @@ const TreeViewComponent = () => {
   const [error, setError] = useState(null); 
   const navigate = useNavigate();
 
+  const getEpicName = (epicId) => {
+    const foundEpic = data.epics.find((epic) => epic._id === epicId);
+    return foundEpic ? foundEpic.epicName : 'Unnamed Epic'; // Return epicName if found, else 'Unnamed Epic'
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -61,18 +66,30 @@ const TreeViewComponent = () => {
                 <div
                   key={task._id}
                   style={{
-                    background: '#e3f2fd ', // Light Green background for tasks BBDEFB  E0F7FA 
+                    background: '#e3f2fd ', 
                     padding: '12px',
                     borderRadius: '8px',
                     marginBottom: '10px',
                   }}
                 >
-                  <h4 className="font-semibold" style={{ color: '#333' }}> {/* Dark Green Text for Tasks */}
+                  <h4 className="font-semibold" style={{ color: '#333' }}>
                     Task {index + 1}: {task.taskName}
                   </h4>
                   <p>{task.description}</p>
+                  {/* Add this extra wrapper for alignment */}
+                  <Space style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div />
+                    <Button
+                      type="link"
+                      icon={<EditOutlined />}
+                      onClick={() => navigate(`/task/edit/${task._id}`, { state: { storyId: story._id } })}
+                    >
+                      Edit Task
+                    </Button>
+                  </Space>
                 </div>
               ))
+              
             )}
           </>
         ),
@@ -81,9 +98,14 @@ const TreeViewComponent = () => {
             <Button
               type="link"
               icon={<EditOutlined />}
-              onClick={() => navigate(`/story/edit/${story._id}`)}
+              onClick={() => navigate(`/story/edit/${story._id}`, {
+                state: {
+                  epicId: story.epicId,
+                  epicName: getEpicName(story.epicId) // Pass the correct epicName
+                }
+              })}
             >
-              Edit
+              Edit Story
             </Button>
             <Button
               type="link"
@@ -96,7 +118,7 @@ const TreeViewComponent = () => {
         ),
         style: { background: '#E0F7FA', borderRadius: '8px', padding: '10px' }, // Lavender background for stories
       }));
-  }, [data.stories, data.tasks]);
+  }, [data.stories, data.tasks, navigate]);
 
   const epicItems = useMemo(() => {
     return data.epics.map((epic) => {
@@ -133,7 +155,7 @@ const TreeViewComponent = () => {
               style={{ color: 'black' }}
               type="link"
               icon={<PlusOutlined />}
-              onClick={() => navigate(`/add-story`, { state: { epicId: epic._id } })}
+              onClick={() => navigate(`/add-story`, { state: { epicId: epic._id, epicName: epic.epicName } })}
             >
               Add Story
             </Button>

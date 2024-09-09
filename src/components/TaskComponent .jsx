@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, Form, Input, Select, Button, Steps, List, Typography, notification } from 'antd';
+import { Card, Form, Input, Select, Button, Steps, List, Typography, notification, Modal } from 'antd'; // Add Modal from antd
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
@@ -8,6 +8,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 const { Step } = Steps;
 const { Option } = Select;
 const { Text } = Typography;
+const { confirm } = Modal; // Modal for confirmation
 
 const TaskComponent = () => {
   const { storyId, id: taskId } = useParams(); // Get Story ID from URL and Task ID if in edit mode
@@ -17,11 +18,12 @@ const TaskComponent = () => {
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [tasks, setTasks] = useState([]); // State to store created tasks
   const [loading, setLoading] = useState(true);
-  const [isEditMode] = useState(!!taskId); // Determine if we're in edit mode
+  const isEditMode = !!taskId; // Determine if we're in edit mode
   const navigate = useNavigate();
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Fetch Data (User Groups, Assigned Users, and Task if in edit mode)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -31,7 +33,7 @@ const TaskComponent = () => {
         setAssignedUsers(usersResponse.data);
   
         if (isEditMode) {
-          const taskResponse = await axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}');
+          const taskResponse = await axios.get(`https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}`);
           const taskData = taskResponse.data;
   
           // Check if storyId is an object, then extract the string ID
@@ -56,6 +58,7 @@ const TaskComponent = () => {
     fetchData();
   }, [taskId, isEditMode]);
 
+  // Validation schema using Yup
   const validationSchema = Yup.object({
     taskName: Yup.string().required('Task Name is required'),
     description: Yup.string().required('Description is required'),
@@ -80,6 +83,7 @@ const TaskComponent = () => {
       .required('End Date is required'),
   });
 
+  // Formik for form handling
   const formik = useFormik({
     initialValues: {
       taskName: '',
@@ -97,7 +101,7 @@ const TaskComponent = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         if (isEditMode) {
-          await axios.put('https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}', values);
+          await axios.put(`https://agilebackendtest-ig6zd90q.b4a.run//api/tasks/${taskId}`, values);
           notification.success({
             message: 'Task Updated',
             description: 'Your task has been updated successfully.',
@@ -112,7 +116,7 @@ const TaskComponent = () => {
             description: 'Your task has been created successfully.',
             placement: 'topRight',
           });
-          resetForm({ values: { ...formik.initialValues, storyId: storyId || location.state?.storyId?._id || '' } }); // Reset form fields and keep storyId pre-filled
+          resetForm({ values: { ...formik.initialValues, storyId: storyId || location.state?.storyId?._id || '' } }); // Reset form fields
           setCurrentStep(0); // Reset to the first step
         }
       } catch (error) {
@@ -146,6 +150,22 @@ const TaskComponent = () => {
 
   const prev = () => {
     setCurrentStep(currentStep - 1);
+  };
+
+  // Show confirmation modal when back button is clicked
+  const showBackConfirm = () => {
+    confirm({
+      title: 'Are you sure you want to go back?',
+      content: 'Any unsaved changes will be lost. Do you want to continue?',
+      okText: 'Yes',
+      cancelText: 'No',
+      onOk() {
+        navigate('/tree'); // Navigate to Tree View if the user confirms
+      },
+      onCancel() {
+        console.log('Stay on the current page');
+      },
+    });
   };
 
   const steps = useMemo(() => [
@@ -361,6 +381,18 @@ const TaskComponent = () => {
               </List.Item>
             )}
           />
+        </div>
+      )}
+
+      {/* Back Button visible only in Edit Mode */}
+      {isEditMode && (
+        <div className="flex justify-center mt-10 ">
+          <Button
+            type="default"
+            onClick={showBackConfirm} // Show confirmation modal on click
+          >
+            Back to Tree View
+          </Button>
         </div>
       )}
     </Card>

@@ -1,24 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, Form, Input, Select, Button, Steps, List, Typography, notification } from 'antd';
+import { Card, Form, Input, Select, Button, Steps, List, Typography, notification, Modal } from 'antd';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { LeftOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
 const { Option } = Select;
 const { Text } = Typography;
+const { confirm } = Modal;
 
 const StoryComponent = () => {
-  const { epicId, id } = useParams();
+  const { epicId, id } = useParams(); // Fetch ID from the URL to check if we're in edit mode
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [userGroups, setUserGroups] = useState([]);
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState([]);
-  const isEditMode = !!id;
+  const isEditMode = !!id; // This will be true if we are in edit mode
   const navigate = useNavigate();
+  
+  // Retrieve the epicName from location.state or default to 'Unnamed Epic'
+  const epicName = location.state?.epicName || 'Unnamed Epic';
   
   const today = new Date().toISOString().split('T')[0];
 
@@ -44,7 +49,7 @@ const StoryComponent = () => {
       if (isEditMode) {
         const storyData = storyResponse.data;
         storyData.epicId = storyData.epicId._id || storyData.epicId;
-        formik.setValues(storyData);
+        formik.setValues(storyData); // Set form values with existing story data in edit mode
       }
     } catch (error) {
       console.error('Failed to load data');
@@ -137,6 +142,21 @@ const StoryComponent = () => {
     setCurrentStep(currentStep + 1);
   };
 
+  const showBackConfirm = () => {
+    confirm({
+      title: 'Are you sure you want to go back?',
+      content: 'Any unsaved changes will be lost. Do you want to continue?',
+      okText: 'Yes',
+      cancelText: 'No',
+      onOk() {
+        navigate('/tree'); // Navigate to Tree View if the user confirms
+      },
+      onCancel() {
+        console.log('Stay on the current page');
+      },
+    });
+  };
+
   const steps = useMemo(() => [
     {
       title: 'Basic Info',
@@ -148,9 +168,17 @@ const StoryComponent = () => {
               <div className="text-red-500 text-xs">{formik.errors.storyName}</div>
             )}
           </Form.Item>
+          
+          {/* Epic ID */}
           <Form.Item label="Epic ID" htmlFor="epicId" required>
             <Input placeholder="Epic ID" id="epicId" {...formik.getFieldProps('epicId')} disabled />
           </Form.Item>
+          
+          {/* Epic Name - Display only (Not editable) */}
+          <Form.Item label="Epic Name">
+            <Input value={epicName} disabled />
+          </Form.Item>
+
           <Form.Item label="Description" htmlFor="description" required>
             <Input.TextArea placeholder="Enter Description" id="description" {...formik.getFieldProps('description')} />
             {formik.touched.description && formik.errors.description && (
@@ -268,9 +296,11 @@ const StoryComponent = () => {
 
   return (
     <Card hoverable style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">
-        {isEditMode ? 'Edit Story' : 'Create Story'}
-      </h2>
+      <div className="flex justify-center items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-800 text-center">
+          {isEditMode ? 'Edit Story' : 'Create Story'}
+        </h2>
+      </div>
       <Steps current={currentStep}>
         {steps.map((item, index) => (
           <Step key={index} title={item.title} />
@@ -324,6 +354,20 @@ const StoryComponent = () => {
           />
         </div>
       )}
+      
+      {/* Back Button Visible Only in Edit Mode */}
+      {isEditMode && (
+        <div className="flex justify-center mt-10">
+          <Button
+            type="default"
+            icon={<LeftOutlined />}
+            onClick={showBackConfirm} // Show confirmation modal on click
+          >
+            Back to Tree View
+          </Button>
+        </div>
+      )}
+      
     </Card>
   );
 };

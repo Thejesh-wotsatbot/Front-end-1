@@ -7,6 +7,7 @@ import UserAssignmentsPage from './components/UserAssignmentsPage';
 import TreeViewComponent from './components/TreeViewComponent';
 import Navigation from './components/Navigation';
 import LandingPage from './components/LandingPage';
+import UserFormComponent from './components/UserForm';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/task/edit/:id" element={<TaskComponent />} />
             <Route path="/assignments" element={<UserAssignmentsPage />} />
             <Route path="/tree" element={<TreeViewComponent />} />
+            <Route path="/user" element={<UserFormComponent />} />
           </Routes>
         </div>
     </Router>

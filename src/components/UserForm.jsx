@@ -21,16 +21,16 @@ const UserFormComponent = () => {
     initialValues: {
       name: '',
       email: '',
-      userGroup: '',
-      whatsappNumber: ''
+      whatsappNumber: '',
+      userGroup: ''
     },
     validationSchema: Yup.object({
       userName: Yup.string().required('User name is required'),
       email: Yup.string().email('Invalid email format').required('Email is required'),
-      userGroup: Yup.string().required('User group is required'),
       whatsappNumber: Yup.string()
         .matches(/^\+?[1-9]\d{1,14}$/, 'Invalid WhatsApp number format')
         .required('WhatsApp number is required'),
+      userGroup: Yup.string().required('User group is required'),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
@@ -77,6 +77,24 @@ const UserFormComponent = () => {
               )}
             </Form.Item>
 
+
+
+            <Form.Item label="WhatsApp Number" required>
+              <Input
+                placeholder="Enter WhatsApp Number"
+                {...formik.getFieldProps('whatsappNumber')}
+              />
+              {formik.touched.whatsappNumber && formik.errors.whatsappNumber && (
+                <div className="text-red-500 text-xs">{formik.errors.whatsappNumber}</div>
+              )}
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
+                Create User
+              </Button>
+            </Form.Item>
+
             <Form.Item label="User Group" required>
               <Select
                 placeholder="Select User Group"
@@ -98,22 +116,6 @@ const UserFormComponent = () => {
               {formik.touched.userGroup && formik.errors.userGroup && (
                 <div className="text-red-500 text-xs">{formik.errors.userGroup}</div>
               )}
-            </Form.Item>
-
-            <Form.Item label="WhatsApp Number" required>
-              <Input
-                placeholder="Enter WhatsApp Number"
-                {...formik.getFieldProps('whatsappNumber')}
-              />
-              {formik.touched.whatsappNumber && formik.errors.whatsappNumber && (
-                <div className="text-red-500 text-xs">{formik.errors.whatsappNumber}</div>
-              )}
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-                Create User
-              </Button>
             </Form.Item>
           </Form>
         </div>

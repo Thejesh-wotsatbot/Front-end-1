@@ -89,11 +89,7 @@ const UserFormComponent = () => {
               )}
             </Form.Item>
 
-            <Form.Item>
-              <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-                Create User
-              </Button>
-            </Form.Item>
+
 
             <Form.Item label="User Group" required>
               <Select
@@ -116,6 +112,12 @@ const UserFormComponent = () => {
               {formik.touched.userGroup && formik.errors.userGroup && (
                 <div className="text-red-500 text-xs">{formik.errors.userGroup}</div>
               )}
+            </Form.Item>
+            
+            <Form.Item>
+              <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
+                Create User
+              </Button>
             </Form.Item>
           </Form>
         </div>

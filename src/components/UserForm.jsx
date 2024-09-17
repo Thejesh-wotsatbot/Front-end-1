@@ -12,29 +12,29 @@ const UserFormComponent = () => {
 
   useEffect(() => {
     // Fetch user groups from the backend to populate the dropdown
-    axios.get('https://agilebackendtest-ig6zd90q.b4a.run//api/userGroups')
+    axios.get(`https://agilebackendtest-ig6zd90q.b4a.run//api/userGroups`)
       .then(response => setUserGroups(response.data))
       .catch(error => console.error('Error fetching user groups:', error));
   }, []);
 
   const formik = useFormik({
     initialValues: {
-      name: '',
+      name: '', 
       email: '',
-      whatsappNumber: '',
-      userGroup: ''
+      userGroup: '',
+      whatsappNumber: ''
     },
     validationSchema: Yup.object({
-      userName: Yup.string().required('User name is required'),
+      name: Yup.string().required('User name is required'), // Updated to 'name'
       email: Yup.string().email('Invalid email format').required('Email is required'),
+      userGroup: Yup.string().required('User group is required'),
       whatsappNumber: Yup.string()
         .matches(/^\+?[1-9]\d{1,14}$/, 'Invalid WhatsApp number format')
         .required('WhatsApp number is required'),
-      userGroup: Yup.string().required('User group is required'),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        await axios.post('https://agilebackendtest-ig6zd90q.b4a.run//api/users', values);
+        await axios.post(`https://agilebackendtest-ig6zd90q.b4a.run//api/users`, values);
         notificationApi.success({
           message: 'User Saved',
           description: 'User has been created successfully!',
@@ -60,10 +60,10 @@ const UserFormComponent = () => {
             <Form.Item label="User Name" required>
               <Input
                 placeholder="Enter User Name"
-                {...formik.getFieldProps('userName')}
+                {...formik.getFieldProps('name')} // Updated to 'name'
               />
-              {formik.touched.userName && formik.errors.userName && (
-                <div className="text-red-500 text-xs">{formik.errors.userName}</div>
+              {formik.touched.name && formik.errors.name && (
+                <div className="text-red-500 text-xs">{formik.errors.name}</div>
               )}
             </Form.Item>
 
@@ -77,7 +77,28 @@ const UserFormComponent = () => {
               )}
             </Form.Item>
 
-
+            <Form.Item label="User Group" required>
+              <Select
+                placeholder="Select User Group"
+                value={formik.values.userGroup || undefined}
+                onChange={(value) => formik.setFieldValue('userGroup', value)} // This will now set the ObjectId
+              >
+                {userGroups.length === 0 ? (
+                  <Option value="" disabled>
+                    No User Groups Available
+                  </Option>
+                ) : (
+                  userGroups.map((group) => (
+                    <Option key={group._id} value={group._id}> {/* Sending ObjectId */}
+                      {group.name}
+                    </Option>
+                  ))
+                )}
+              </Select>
+              {formik.touched.userGroup && formik.errors.userGroup && (
+                <div className="text-red-500 text-xs">{formik.errors.userGroup}</div>
+              )}
+            </Form.Item>
 
             <Form.Item label="WhatsApp Number" required>
               <Input
@@ -89,31 +110,6 @@ const UserFormComponent = () => {
               )}
             </Form.Item>
 
-
-
-            <Form.Item label="User Group" required>
-              <Select
-                placeholder="Select User Group"
-                value={formik.values.userGroup || undefined}
-                onChange={(value) => formik.setFieldValue('userGroup', value)}
-              >
-                {userGroups.length === 0 ? (
-                  <Option value="" disabled>
-                    No User Groups Available
-                  </Option>
-                ) : (
-                  userGroups.map((group) => (
-                    <Option key={group._id} value={group._id}>
-                      {group.name}
-                    </Option>
-                  ))
-                )}
-              </Select>
-              {formik.touched.userGroup && formik.errors.userGroup && (
-                <div className="text-red-500 text-xs">{formik.errors.userGroup}</div>
-              )}
-            </Form.Item>
-            
             <Form.Item>
               <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
                 Create User

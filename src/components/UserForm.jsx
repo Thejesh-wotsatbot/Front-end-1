@@ -12,7 +12,7 @@ const UserFormComponent = () => {
 
   useEffect(() => {
     // Fetch user groups from the backend to populate the dropdown
-    axios.get(`https://agilebackendtest-ig6zd90q.b4a.run//api/userGroups`)
+    axios.get(`https://agilebackendtest-ig6zd90q.b4a.run/api/userGroups`)
       .then(response => setUserGroups(response.data))
       .catch(error => console.error('Error fetching user groups:', error));
   }, []);
@@ -25,16 +25,16 @@ const UserFormComponent = () => {
       whatsappNumber: ''
     },
     validationSchema: Yup.object({
-      name: Yup.string().required('User name is required'), // Updated to 'name'
+      name: Yup.string().required('User name is required'),
       email: Yup.string().email('Invalid email format').required('Email is required'),
       userGroup: Yup.string().required('User group is required'),
       whatsappNumber: Yup.string()
-        .matches(/^\+?[1-9]\d{1,14}$/, 'Invalid WhatsApp number format')
+        .matches(/^\d{10}$/, 'WhatsApp number must be exactly 10 digits') // Updated regex for exactly 10 digits
         .required('WhatsApp number is required'),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        await axios.post(`https://agilebackendtest-ig6zd90q.b4a.run//api/users`, values);
+        await axios.post(`https://agilebackendtest-ig6zd90q.b4a.run/api/users`, values);
         notificationApi.success({
           message: 'User Saved',
           description: 'User has been created successfully!',
@@ -42,10 +42,17 @@ const UserFormComponent = () => {
         resetForm();
       } catch (error) {
         console.error('There was an error saving the user!', error);
-        notificationApi.error({
-          message: 'Error',
-          description: 'There was an error saving the user.',
-        });
+        if (error.response && error.response.status === 400) {
+          notificationApi.error({
+            message: 'Validation Error',
+            description: error.response.data.message,
+          });
+        } else {
+          notificationApi.error({
+            message: 'Error',
+            description: 'There was an error saving the user.',
+          });
+        }
       }
     },
   });
@@ -60,7 +67,7 @@ const UserFormComponent = () => {
             <Form.Item label="User Name" required>
               <Input
                 placeholder="Enter User Name"
-                {...formik.getFieldProps('name')} // Updated to 'name'
+                {...formik.getFieldProps('name')}
               />
               {formik.touched.name && formik.errors.name && (
                 <div className="text-red-500 text-xs">{formik.errors.name}</div>
@@ -81,7 +88,7 @@ const UserFormComponent = () => {
               <Select
                 placeholder="Select User Group"
                 value={formik.values.userGroup || undefined}
-                onChange={(value) => formik.setFieldValue('userGroup', value)} // This will now set the ObjectId
+                onChange={(value) => formik.setFieldValue('userGroup', value)}
               >
                 {userGroups.length === 0 ? (
                   <Option value="" disabled>
@@ -89,7 +96,7 @@ const UserFormComponent = () => {
                   </Option>
                 ) : (
                   userGroups.map((group) => (
-                    <Option key={group._id} value={group._id}> {/* Sending ObjectId */}
+                    <Option key={group._id} value={group._id}>
                       {group.name}
                     </Option>
                   ))

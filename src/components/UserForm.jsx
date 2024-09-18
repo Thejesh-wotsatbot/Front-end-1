@@ -43,11 +43,13 @@ const UserFormComponent = () => {
       } catch (error) {
         console.error('There was an error saving the user!', error);
         if (error.response && error.response.status === 400) {
+
           notificationApi.error({
             message: 'Validation Error',
-            description: error.response.data.message,
+            description: error.response.data.error, 
           });
         } else {
+
           notificationApi.error({
             message: 'Error',
             description: 'There was an error saving the user.',
